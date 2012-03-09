@@ -1,0 +1,8 @@
+Using BiomeEdit you can easily manage the biomes of your map.
+
+You can either set the region around you (with radius X) to a biome or use a brush so you can set circular biomes at the location you're looking at.
+
+Due to the fact that the bukkit API for this is quiet new, this whole mod is in an alpha state and will be enhanced step by step. ;-)
+Feel free to contribute or share your thoughts and ideas!
+
+Homepage: http://dev.bukkit.org/server-mods/biomedit/
