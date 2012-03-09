@@ -2,7 +2,6 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>me.derflash.plugins.cnbiomeedit</groupId>
     <artifactId>BiomeEdit</artifactId>
-    <version>1.0</version>
     <name>BiomeEdit</name>
     <url>http://www.cube-nation.de/</url>
     <repositories>
@@ -40,4 +39,5 @@
 		    <systemPath>${basedir}/dependencies/CraftBukkit.jar</systemPath>
         </dependency>
     </dependencies>
+    <version>0.1</version>
 </project>
