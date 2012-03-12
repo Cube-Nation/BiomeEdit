@@ -39,7 +39,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     	
 		if (!player.hasPermission("cnbiome.admin")) return true;
     	
-    	if (label.equalsIgnoreCase("biome")) {
+    	if (true /* label.equalsIgnoreCase("biome")*/) {
     		
         		if(args.length > 2 && args[0].equalsIgnoreCase("set")) {
         			BiomeMode _mode = BiomeBrushSettings.getModeFromString(args[1]);
@@ -150,6 +150,12 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         			}
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Available biomes: " + ChatColor.AQUA + biomes);
         			
+        		} else if(args.length > 0 && args[0].equalsIgnoreCase("modes") ) {
+        			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "- Mode overview -");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "ROUND - Creates a round biome");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "SQUARE - Creates a square biome");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "REPLACE - Uses the boundaries of the current biome at the location");
+
         			
         		} else {
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "- Command overview -");
@@ -158,6 +164,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" brush off - Deactivate biome brush");
         			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" info - Gives you informations about the biome you're currently standing in");
         			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" list - Lists the servers' available biomes");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" modes - Lists the replacement modes");
 
         		}
         		
