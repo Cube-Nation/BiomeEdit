@@ -28,16 +28,5 @@ public class UIStuff {
 			counter++;
 		}
        	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75mm|"+yLoc+"|" + yLoc);
-       	
-       	
-       	/*
-    	int counter = 0;
-    	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75s|polygon2d");
-        for (String _message : weCUIMessages) {
-        	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75p2|" + counter + "|" + _message+"|0");
-        	counter++;
-        }
-       	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75mm|"+pos.getBlockY()+"|" + pos.getBlockY());
-        */
 	}
 }
