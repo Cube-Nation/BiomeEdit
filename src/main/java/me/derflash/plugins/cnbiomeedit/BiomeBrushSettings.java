@@ -6,8 +6,14 @@ public class BiomeBrushSettings {
 
 	private int size;
 	private Biome biome;
-	
+	private BiomeMode mode;
+
+	public enum BiomeMode {
+		ROUND(), SQUARE(), REPLACE()
+	}
+
 	// ###############
+	
 	
 	public boolean setBiome(String biomeName) {
 		Biome newBiome = BiomeBrushSettings.getBiomeFromString(biomeName);
@@ -43,6 +49,25 @@ public class BiomeBrushSettings {
 		}
 	}
 	
+	
+	public BiomeMode getMode() {
+		return mode;
+	}
+	public void setMode(BiomeMode mode) {
+		this.mode = mode;
+	}
+	public boolean setMode(String _mode) {
+		BiomeMode mode = BiomeBrushSettings.getModeFromString(_mode);
+		if (mode == null) {
+			setMode((BiomeMode)null);
+			return false;
+		} else {
+			setMode(mode);
+			return true;
+		}
+	}
+
+	
 	// ###############
 	
 	public static boolean isValidBiomeName(String biomeName) {
@@ -61,4 +86,14 @@ public class BiomeBrushSettings {
 		if (size < 0 || size > 100) return false;
 		else return true;
 	}
+	public static BiomeMode getModeFromString(String string) {
+		try {
+			BiomeMode bMode = BiomeMode.valueOf(string.toUpperCase());
+			return bMode;
+		} catch (Exception e) {}
+		
+		return null;
+	}
+
 }
+

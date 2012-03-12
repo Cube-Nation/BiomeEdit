@@ -1,64 +1,36 @@
 package me.derflash.plugins.cnbiomeedit;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
+import me.derflash.plugins.cnbiomeedit.BiomeBrushSettings.BiomeMode;
 
+import org.bukkit.ChatColor;
 import org.bukkit.block.Biome;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.java.JavaPlugin;
 
 
 public class CNBiomeEdit extends JavaPlugin implements Listener {
 	HashSet<Byte> transparentBlocks = null;
-	private HashMap<Player, BiomeBrushSettings> currentBrushers = new HashMap<Player, BiomeBrushSettings>();
+	public HashMap<Player, BiomeBrushSettings> currentBrushers = new HashMap<Player, BiomeBrushSettings>();
 
-	
-	
-    public void onDisable() {
-    }
-
-    public void onEnable() {
+	public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
 
 		transparentBlocks = new HashSet<Byte>();
 		transparentBlocks.add((byte) 0);
 		transparentBlocks.add((byte) 20);
-    }
-
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
-		Player player = event.getPlayer();
-    	if (isBrushActive(player)) {
-    		event.setCancelled(true);
-
-    		Block targetBlock = player.getTargetBlock(null, 200);
-    		Location targetLocation = targetBlock.getLocation();
-    		
-    		BiomeBrushSettings bbs = currentBrushers.get(player);
-
-       		makeCylinderBiome(player, targetLocation.toVector(), bbs.getBiome(), player.getWorld(), bbs.getSize());
-    	}
+		
+		new PlayerListener(this);
     }
     
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-		Player player = event.getPlayer();
-		currentBrushers.remove(player);
+    public void onDisable() {
     }
-
+    
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     	// player is the warned player; player1 is the sender
@@ -69,25 +41,65 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     	
     	if (label.equalsIgnoreCase("biome")) {
     		
-        		if(args.length > 2 && args[0].equalsIgnoreCase("set") ) {
-        			Biome _biome = BiomeBrushSettings.getBiomeFromString(args[1]);
-        			int _biomeSize = Integer.parseInt(args[2]);
+        		if(args.length > 2 && args[0].equalsIgnoreCase("set")) {
+        			BiomeMode _mode = BiomeBrushSettings.getModeFromString(args[1]);
+        			if (_mode == null) {
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such mode. See " + ChatColor.AQUA + "/" + label + " help");
+        				return true;
+        			}
         			
+        			Biome _biome = BiomeBrushSettings.getBiomeFromString(args[2]);
         			if (_biome == null) {
             			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such biome. See " + ChatColor.AQUA + "/" + label + " list");
         				return true;
         			}
-        			
-    				if (!BiomeBrushSettings.isValidBiomeSize(_biomeSize)) {
-            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "This is no valid size. See " + ChatColor.AQUA + "/" + label + " help");
-        				return true;
-    				}
-        			
-               		makeCylinderBiome(player, null, _biome, player.getWorld(), _biomeSize);
-        			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome with radius "+ _biomeSize +" set to: " + _biome.toString());
+        
+        			if (_mode.equals(BiomeMode.ROUND)) {
+        				if (args.length < 4) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to provide a size for this mode. See " + ChatColor.AQUA + "/" + label + " help");
+            				return true;
+        				}
+        				
+            			int _biomeSize = Integer.parseInt(args[3]);
+        				if (!BiomeBrushSettings.isValidBiomeSize(_biomeSize)) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "This is no valid size. See " + ChatColor.AQUA + "/" + label + " help");
+            				return true;
+        				}
+        				
+        				BiomeEditor.makeAndMarkCylinderBiome(player, _biome, _biomeSize, -1);
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Round biome with radius "+ _biomeSize +" created: " + _biome.toString());
 
-        		} else if(args.length > 0 && args[0].equalsIgnoreCase("brush") ) {
-        			if (args.length == 1 || args[1].equalsIgnoreCase("off")) {
+            			
+        			} else if (_mode.equals(BiomeMode.SQUARE)) {
+        				if (args.length < 4) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to provide a size for this mode. See " + ChatColor.AQUA + "/" + label + " help");
+            				return true;
+        				}
+
+            			int _biomeSize = Integer.parseInt(args[3]);
+        				if (!BiomeBrushSettings.isValidBiomeSize(_biomeSize)) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "This is no valid size. See " + ChatColor.AQUA + "/" + label + " help");
+            				return true;
+        				}
+        				
+        				BiomeEditor.makeAndMarkSquareBiome(player, _biome, _biomeSize, -1);
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Square biome with radius "+ _biomeSize +" created: " + _biome.toString());
+            			
+            			
+        			} else if (_mode.equals(BiomeMode.REPLACE)) {
+        				if (args.length > 3) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You can not set the size in replace mode. See " + ChatColor.AQUA + "/" + label + " help");
+            				return true;
+        				}
+
+        				BiomeEditor.replaceAndMarkBiome(player, _biome, -1);
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome was replaced to: " + _biome.toString());
+
+        			}
+        			
+        			
+        		} else if(args.length > 2 && args[0].equalsIgnoreCase("brush") ) {
+        			if (args[1].equalsIgnoreCase("off")) {
         				deactivateBrush(player);
             			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome brush mode deactived.");
         				return true;
@@ -95,31 +107,40 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         			
         			BiomeBrushSettings _settings = new BiomeBrushSettings();
         			
-        			if (args.length > 1) {
-            			if (!_settings.setBiome(args[1])) {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such biome. See " + ChatColor.AQUA + "/" + label + " list");
-            				return true;
-            			}
+        			if (!_settings.setMode(args[1])) {
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such mode. See " + ChatColor.AQUA + "/" + label + " list");
+        				return true;
         			}
         			
-        			if (args.length > 2) {
-            			if (!_settings.setSize(Integer.parseInt(args[2]))) {
+        			if (!_settings.setBiome(args[2])) {
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such biome. See " + ChatColor.AQUA + "/" + label + " list");
+        				return true;
+        			}
+        			
+        			if (args.length > 3) {
+        				if (_settings.getMode().equals(BiomeMode.REPLACE)) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You can not set the size in replace mode. See " + ChatColor.AQUA + "/" + label + " help");
+            				return true;
+            				
+        				} else if (!_settings.setSize(Integer.parseInt(args[3]))) {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "This is no valid size. See " + ChatColor.AQUA + "/" + label + " help");
             				return true;
         				}
         			}
         			        			        			
         			if (activateBrush(player, _settings)) {
-            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome brush mode activated. [Biome: " + _settings.getBiome().toString() + " | Size: " + _settings.getSize() + "]");
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome brush mode activated. [Biome: " + _settings.getBiome().toString() + " | Mode: " + _settings.getMode().toString() + " | Size: " + _settings.getSize() + "]");
         			} else {
             			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome brush mode could not be activated. :-(");
-        				
         			}
 
         			
         		} else if(args.length > 0 && args[0].equalsIgnoreCase("info") ) {
+        			UIStuff.markBiome(player.getLocation(), player, -1);
+        			
         			Biome biome = player.getWorld().getBiome(player.getLocation().getBlockX(), player.getLocation().getBlockZ());
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You are currently standing in: " + ChatColor.AQUA + biome.toString());
+
         			
         		} else if(args.length > 0 && args[0].equalsIgnoreCase("list") ) {
         			String biomes = null;
@@ -129,12 +150,14 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         			}
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Available biomes: " + ChatColor.AQUA + biomes);
         			
+        			
         		} else {
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "- Command overview -");
-        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" set [biome] [radius] - Sets the biome with this radius on the current player location");
-        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" brush [biome] [radius] - Activate biome brush");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" set <mode> <biome> [radius] - Sets the biome with this radius on the current player location");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" brush <mode> <biome> [radius] - Activate biome brush");
         			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" brush off - Deactivate biome brush");
-        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" info - Prints out the biome you're currently standing in");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" info - Gives you informations about the biome you're currently standing in");
+        			player.sendMessage(ChatColor.AQUA + "* " + ChatColor.WHITE + "/"+label+" list - Lists the servers' available biomes");
 
         		}
         		
@@ -143,10 +166,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     	return true;
     }
 
-
-
-
-
+    
 
 	public boolean isBrushActive(Player player) {
 		return currentBrushers.containsKey(player);
@@ -164,128 +184,5 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 		return true;
 	}
     
-	
-    public void makeCylinderBiome(Player player, Vector pos, Biome biome, World world, double radius) {
-    	if (pos == null) pos = player.getLocation().toVector();
-    	
-    	double radiusX = radius;
-    	double radiusZ = radius;
-    	
-        radiusX += 0.5;
-        radiusZ += 0.5;
-
-       
-        if (pos.getBlockY() < 0) {
-            pos = pos.setY(0);
-        }
-
-        final double invRadiusX = 1 / radiusX;
-        final double invRadiusZ = 1 / radiusZ;
-
-        final int ceilRadiusX = (int) Math.ceil(radiusX);
-        final int ceilRadiusZ = (int) Math.ceil(radiusZ);
-        
-//        ArrayList<String> reggedChunks = new ArrayList<String>();
-
-        ArrayList<String> weCUIMessages1 = new ArrayList<String>();
-        ArrayList<String> weCUIMessages2 = new ArrayList<String>();
-        ArrayList<String> weCUIMessages3 = new ArrayList<String>();
-        ArrayList<String> weCUIMessages4 = new ArrayList<String>();
-        
-
-        double nextXn = 0;
-        forX: for (int x = 0; x <= ceilRadiusX; ++x) {
-            final double xn = nextXn;
-            nextXn = (x + 1) * invRadiusX;
-            double nextZn = 0;
-            forZ: for (int z = 0; z <= ceilRadiusZ; ++z) {
-                final double zn = nextZn;
-                nextZn = (z + 1) * invRadiusZ;
-
-                double distanceSq = lengthSq(xn, zn);
-                if (distanceSq > 1) {
-                    if (z == 0) {
-                        break forX;
-                    }
-                    break forZ;
-                }
-                
-                int x1 = pos.getBlockX() + x;
-                int x2 = pos.getBlockX() - x;
-                int z1 = pos.getBlockZ() + z;
-                int z2 = pos.getBlockZ() - z;
-                
-                setBiomeAt(world, x1, z1, biome);
-                setBiomeAt(world, x2, z1, biome);
-                setBiomeAt(world, x1, z2, biome);
-                setBiomeAt(world, x2, z2, biome);
-
-                // TODO
-                /*
-                if (regen) { 
-                	smartRegenChunkAt(x1, z1, world, reggedChunks);
-                	smartRegenChunkAt(x2, z1, world, reggedChunks);
-                	smartRegenChunkAt(x1, z2, world, reggedChunks);
-                	smartRegenChunkAt(x2, z2, world, reggedChunks);
-                }
-                */
-
-                if (! (lengthSq(nextXn, zn) <= 1 && lengthSq(xn, nextZn) <= 1)) {
-                	// we got an outter point => weGUI update
-                	
-                	weCUIMessages1.add(x1+"|"+z1);
-                	weCUIMessages2.add(x2+"|"+z2);
-                	weCUIMessages3.add(x2+"|"+z1);
-                	weCUIMessages4.add(x1+"|"+z2);
-                }
-            }
-        }
-        
-        // join guiMessages now
-        ArrayList<String> weCUIMessages = new ArrayList<String>();
-        weCUIMessages.addAll(weCUIMessages1);
-        weCUIMessages.addAll(weCUIMessages2);
-        weCUIMessages.addAll(weCUIMessages3);
-        weCUIMessages.addAll(weCUIMessages4);
-        
-    	int counter = 0;
-    	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75s|polygon2d");
-        for (String _message : weCUIMessages) {
-        	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75p2|" + counter + "|" + _message+"|0");
-        	counter++;
-        }
-       	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75mm|30|120");
-        
-
-    }
-    
-    private void smartRegenChunkAt(int x, int z, World world, ArrayList<String> reggedChunks) {
-    	try {
-    		world.regenerateChunk(x, z);
-    	} catch (Exception e) {
-    		world.refreshChunk(x, z);
-    	}
-		/*
-		Chunk toReg = world.getChunkAt(x, z);
-		
-		if (!reggedChunks.contains(toReg.toString())) {
-			System.out.println("SmartChunkRegAt: " + x + "," + z);
-			reggedChunks.add(toReg.toString());
-            try {
-                world.regenerateChunk(toReg.getX(), toReg.getZ());
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-		}
-		*/
-	}
-
-	private void setBiomeAt(World world, int x,int z, Biome biome) {
-    	world.setBiome(x, z, biome);
-    }
-
-    private static final double lengthSq(double x, double z) {
-        return (x * x) + (z * z);
-    }
 }
 
