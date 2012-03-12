@@ -5,8 +5,10 @@ main: me.derflash.plugins.cnbiomeedit.CNBiomeEdit
 name: BiomeEdit
 startup: postworld
 url: http://www.cube-nation.de/
-version: '0.1'
+version: '0.2'
 commands:
     biome:
         description: Manage your biomes
         usage: /biome help for more information
+        aliases: [be, biomeedit]
+        
