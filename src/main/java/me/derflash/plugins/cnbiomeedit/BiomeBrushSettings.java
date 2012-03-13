@@ -9,7 +9,7 @@ public class BiomeBrushSettings {
 	private BiomeMode mode;
 
 	public enum BiomeMode {
-		ROUND(), SQUARE(), REPLACE()
+		ROUND, SQUARE, REPLACE, WE, WG
 	}
 
 	// ###############

@@ -27,6 +27,12 @@ public class UIStuff {
 			player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75p2|" + counter + "|" + point[0] + "|"  + point[1] +"|0");
 			counter++;
 		}
+		UIStuff.flattenWECUI(player, yLoc);
+	}
+	
+	public static void flattenWECUI(Player player, int yLoc) {
+		if (yLoc == -1) yLoc = player.getLocation().getBlockY();
        	player.sendRawMessage("\u00A75\u00A76\u00A74\u00A75mm|"+yLoc+"|" + yLoc);
+
 	}
 }

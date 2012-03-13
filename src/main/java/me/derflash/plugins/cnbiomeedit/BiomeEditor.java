@@ -11,6 +11,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+
 public class BiomeEditor {
 	
     public static HashSet<int[]> findBiomeArea(Location fromPos, boolean filled) {
@@ -31,8 +32,7 @@ public class BiomeEditor {
 			int x = currentCheck[0];
 			int z = currentCheck[1];
 			
-			
-			int[][] locsAroundMe = new int[][] {new int[] {x+1,z+1}, new int[] {x+1,z-1}, new int[] {x-1,z+1}, new int[] {x-1,z-1}};
+			int[][] locsAroundMe = new int[][] {new int[] {x+1,z}, new int[] {x-1,z}, new int[] {x,z+1}, new int[] {x,z-1}};
 			for (int i = 0; i<locsAroundMe.length; i++) {
 				int[] locToCheck = locsAroundMe[i];
 				checkString = locToCheck[0] + "|" + locToCheck[1];
@@ -164,6 +164,20 @@ public class BiomeEditor {
 		return BiomeEditor.findBiomeArea(location, false);
 	}
 
+	public static boolean makeWGBiome(Player player, String regionID, Biome biome, CNBiomeEdit plugin) {
+    	try{ return WorldGuardFunctions.makeWGBiome(player, regionID, biome, plugin); }
+    	catch (Exception e) {}
+    	catch (Error er) {}
+		return false;
+	}
+
+
+	public static boolean makeWEBiome(Player player, Biome biome, CNBiomeEdit plugin) {
+    	try{ return WorldEditFunctions.makeWEBiome(player, biome, plugin); }
+    	catch (Exception e) {}
+    	catch (Error er) {}
+		return false;
+	}
 	
 	// ########################################
 	
@@ -196,4 +210,9 @@ public class BiomeEditor {
 		ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
 		UIStuff.markAreaWithPoints(sorted, player, yLoc);		
 	}
+
+
+
+
+
 }
