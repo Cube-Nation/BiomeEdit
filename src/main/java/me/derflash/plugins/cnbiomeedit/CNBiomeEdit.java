@@ -1,5 +1,7 @@
 package me.derflash.plugins.cnbiomeedit;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -11,6 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
@@ -30,9 +33,25 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 
 	HashSet<Byte> transparentBlocks = null;
 	HashSet<Player> cuiSupported = new HashSet<Player>();
+
+	private File settingsFile;
+
+	public YamlConfiguration settings;
 	
 	public void onEnable() {
 		CNBiomeEdit.plugin = this; // static access
+		
+		File dFolder = getDataFolder();
+		if(!dFolder.exists()) dFolder.mkdirs();
+		
+		settingsFile = new File(dFolder, "config.yml");
+        if (settingsFile.exists()) settings = YamlConfiguration.loadConfiguration(settingsFile);
+        else {
+        	settings = new YamlConfiguration();
+        	settings.set("maxRadius", 200);
+        	settings.set("threaded", true);
+        	saveSettings();
+        }
 		
         getServer().getPluginManager().registerEvents(this, this);
 
@@ -45,6 +64,21 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     
     public void onDisable() {
     }
+    
+    
+	public boolean saveSettings() {
+		if (!settingsFile.exists()) {
+			settingsFile.getParentFile().mkdirs();
+		}
+		
+		try {
+			settings.save(settingsFile);
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
     
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -103,10 +137,15 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
             				return true;
         				}
 
-        				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
-        					public void run() {
-                				BiomeEditor.replaceAndMarkBiome(player, _biome, -1);
-        					}});
+        				if (settings.getBoolean("threaded")) {
+            				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
+            					public void run() {
+                    				BiomeEditor.replaceAndMarkBiome(player, _biome, -1);
+            					}});
+        				} else {
+            				BiomeEditor.replaceAndMarkBiome(player, _biome, -1);
+
+        				}
 
         			} else if (_mode.equals(BiomeMode.WE)) {
         				if (wePlugin() == null) {

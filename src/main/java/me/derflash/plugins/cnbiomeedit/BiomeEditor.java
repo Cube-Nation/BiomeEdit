@@ -173,21 +173,29 @@ public class BiomeEditor {
 		else if (maxCount > 2000) jumpAt = 5;
 		
 		for (final int[] point : bArea.getPoints()) {
-			Future<Object> go = Bukkit.getScheduler().callSyncMethod(CNBiomeEdit.plugin, new Callable<Object>() {
-				public Object call() throws Exception {
-					Functions.setBiomeAt(world, point[0], point[1], biome);
-					return null;
-				}});
-			while (!go.isDone()) {}
 			
-			if (((counter * 100 / maxCount)  % jumpAt) == 0) {
-				int percent = counter * 100 / maxCount;
-				if (jump != percent) {
-					player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "... " + percent + "%");
-					jump = percent;
+			if (!CNBiomeEdit.plugin.settings.getBoolean("threaded")) {
+				Functions.setBiomeAt(world, point[0], point[1], biome);
+				
+			} else {
+				Future<Object> go = Bukkit.getScheduler().callSyncMethod(CNBiomeEdit.plugin, new Callable<Object>() {
+					public Object call() throws Exception {
+						Functions.setBiomeAt(world, point[0], point[1], biome);
+						return null;
+					}});
+				while (!go.isDone()) {}
+				
+				if (((counter * 100 / maxCount)  % jumpAt) == 0) {
+					int percent = counter * 100 / maxCount;
+					if (jump != percent) {
+						player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "... " + percent + "%");
+						jump = percent;
+					}
 				}
+				counter++;
+
 			}
-			counter++;
+			
 		}
 
 		return bArea.getOuterPoints();
