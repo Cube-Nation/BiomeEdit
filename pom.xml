@@ -52,5 +52,5 @@
         	<version>1.2.3-R0.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
-    <version>0.3</version>
+    <version>0.4</version>
 </project>
