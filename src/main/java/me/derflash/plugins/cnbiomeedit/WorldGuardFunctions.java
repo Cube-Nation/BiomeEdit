@@ -12,13 +12,27 @@ import com.sk89q.worldedit.regions.CuboidRegionSelector;
 import com.sk89q.worldedit.regions.Polygonal2DRegionSelector;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionSelector;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public class WorldGuardFunctions {
 
+	private static WorldGuardPlugin _wgPlugin;
+
+	public static WorldGuardPlugin wgPlugin() {
+		if (_wgPlugin == null) {
+			_wgPlugin = (WorldGuardPlugin) CNBiomeEdit.plugin.getServer().getPluginManager().getPlugin("WorldGuard");
+			if (_wgPlugin == null) {
+				CNBiomeEdit.plugin.getLogger().info("[BiomeEdit] WGPlugin not found");
+				return null;
+			}
+		}
+		return _wgPlugin;
+	}
+	
 	public static boolean makeWGBiome(Player player, String regionID, Biome biome) {
-		RegionManager rm = CNBiomeEdit.plugin.wgPlugin().getGlobalRegionManager().get(player.getWorld());
+		RegionManager rm = WorldGuardFunctions.wgPlugin().getGlobalRegionManager().get(player.getWorld());
 		ProtectedRegion pRegion = rm.getRegion(regionID);
 		if (pRegion == null) return false;
 		

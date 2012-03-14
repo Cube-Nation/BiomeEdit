@@ -6,8 +6,6 @@ import java.util.Collection;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-
 public class UIStuff {
 	public static BiomeArea markBiome(Location location, Player player, int yLoc) {
 		BiomeArea bArea = BiomeEditor.findBiomeArea(location);
@@ -37,9 +35,13 @@ public class UIStuff {
 	}
 
 	public static boolean hasCUISupport(Player player) {
-		WorldEditPlugin wePlugin = CNBiomeEdit.plugin.wePlugin();
-		if (wePlugin == null) return false;		// we just assume yes
-
-		return wePlugin.getSession(player).hasCUISupport();
+		try {
+			return WorldEditFunctions.hasCUISupport(player);
+		}
+    	catch (Exception e) {}
+    	catch (Error er) {}
+		
+	    return false;
 	}
+
 }

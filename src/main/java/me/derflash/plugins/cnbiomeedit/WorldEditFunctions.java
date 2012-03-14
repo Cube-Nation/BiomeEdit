@@ -9,14 +9,35 @@ import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionOperationException;
 
+
 public class WorldEditFunctions {
 
+	private static WorldEditPlugin _wePlugin;
+	
+	public static WorldEditPlugin wePlugin() {
+		if (_wePlugin == null) {
+			_wePlugin = (WorldEditPlugin) CNBiomeEdit.plugin.getServer().getPluginManager().getPlugin("WorldEdit");
+			if (_wePlugin == null) {
+				CNBiomeEdit.plugin.getLogger().info("[BiomeEdit] WEPlugin not found");
+				return null;
+			}
+		}
+		return _wePlugin;
+	}
+	
+	public static boolean hasCUISupport(Player player) {
+		WorldEditPlugin wePlugin = WorldEditFunctions.wePlugin();
+		if (wePlugin == null) return false;		// we just assume yes
+
+		return wePlugin.getSession(player).hasCUISupport();
+	}
 	
 	public static boolean makeWEBiome(Player player, Biome biome) {
-		LocalSession lSession = CNBiomeEdit.plugin.wePlugin().getSession(player);
+		LocalSession lSession = WorldEditFunctions.wePlugin().getSession(player);
 		try {
 			Region region = lSession.getSelection(new BukkitWorld(player.getWorld()));
 			if (region == null) return false;

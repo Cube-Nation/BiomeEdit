@@ -19,9 +19,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-
 
 public class CNBiomeEdit extends JavaPlugin implements Listener {
 	public HashMap<Player, BiomeBrushSettings> currentBrushers = new HashMap<Player, BiomeBrushSettings>();
@@ -29,8 +26,6 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 	HashSet<Player> cuiSupported = new HashSet<Player>();
 
 	public static CNBiomeEdit plugin;
-	private WorldEditPlugin _wePlugin;
-	private WorldGuardPlugin _wgPlugin;
 
 	// major settings
 	private File settingsFile;
@@ -168,10 +163,21 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         				}
 
         			} else if (_mode.equals(BiomeMode.WE)) {
-        				if (wePlugin() == null) {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldEdit plugin for this");
-            				return true;
+        				try {
+            				if (WorldEditFunctions.wePlugin() == null) {
+                    			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldEdit plugin for this");
+                				return true;
+            				}
         				}
+        		    	catch (Exception e) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldEdit plugin for this");
+        		    		return true;
+        		    	}
+        		    	catch (Error er) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldEdit plugin for this");
+        		    		return true;
+        		    	}
+        				
         				
         				if (args.length > 3) {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "WE only needs the biome parameter. See " + ChatColor.AQUA + "/" + label + " help");
@@ -188,10 +194,20 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         				}
         				
         			} else if (_mode.equals(BiomeMode.WG)) {
-        				if (wgPlugin() == null) {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldGuard plugin for this");
-            				return true;
+        				try {
+            				if (WorldGuardFunctions.wgPlugin() == null) {
+                    			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldGuard plugin for this");
+                				return true;
+            				}
         				}
+        		    	catch (Exception e) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldGuard plugin for this");
+        		    		return true;
+        		    	}
+        		    	catch (Error er) {
+                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to install the WorldGuard plugin for this");
+        		    		return true;
+        		    	}
         				
         				if (args.length < 4) {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You need to provide a WorldGuard regionID for this. See " + ChatColor.AQUA + "/" + label + " help");
@@ -337,27 +353,8 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 	}
 
 	
-	public WorldEditPlugin wePlugin() {
-		if (_wePlugin == null) {
-			_wePlugin = (WorldEditPlugin) getServer().getPluginManager().getPlugin("WorldEdit");
-			if (_wePlugin == null) {
-				getLogger().info("[BiomeEdit] WEPlugin not found");
-				return null;
-			}
-		}
-		return _wePlugin;
-	}
+
 	
-	
-	public WorldGuardPlugin wgPlugin() {
-		if (_wgPlugin == null) {
-			_wgPlugin = (WorldGuardPlugin) getServer().getPluginManager().getPlugin("WorldGuard");
-			if (_wgPlugin == null) {
-				getLogger().info("[BiomeEdit] WGPlugin not found");
-				return null;
-			}
-		}
-		return _wgPlugin;
-	}
+
 }
 

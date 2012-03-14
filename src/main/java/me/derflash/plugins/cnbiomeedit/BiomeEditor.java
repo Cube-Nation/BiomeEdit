@@ -221,7 +221,7 @@ public class BiomeEditor {
 		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + bArea.getPoints().size() + ChatColor.WHITE + " blocks to new biome now ...");
 		changeAndMarkBiome(bArea, biome, location, player, yLoc);
 
-		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Square biome with radius "+ size +" created: " + biome.toString());
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Square " + biome.toString() + " biome with radius "+ size +" created at " + location.getBlockX() + "," + location.getBlockZ());
 }
 
 
@@ -249,7 +249,7 @@ public class BiomeEditor {
 		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + bArea.getPoints().size() + ChatColor.WHITE + " blocks to new biome now ...");
 		changeAndMarkBiome(bArea, biome, location, player, yLoc);
    		
-		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Round biome with radius "+ size +" created: " + biome.toString());
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Round " + biome.toString() + " biome with radius "+ size +" created at " + location.getBlockX() + "," + location.getBlockZ());
 
 	}
 	
