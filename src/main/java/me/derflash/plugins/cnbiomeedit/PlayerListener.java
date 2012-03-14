@@ -2,6 +2,7 @@ package me.derflash.plugins.cnbiomeedit;
 
 import me.derflash.plugins.cnbiomeedit.BiomeBrushSettings.BiomeMode;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -23,7 +24,7 @@ public class PlayerListener implements Listener {
 	
 	@EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-		Player player = event.getPlayer();
+		final Player player = event.getPlayer();
     	if (player.getItemInHand().getType().equals(Material.DEAD_BUSH) && plugin.isBrushActive(player)) {
     		event.setCancelled(true);
 
@@ -34,18 +35,38 @@ public class PlayerListener implements Listener {
     		}
     		
     		if (targetBlock != null) {
-        		Location targetLocation = targetBlock.getLocation();
-        		
-        		BiomeBrushSettings bbs = plugin.currentBrushers.get(player);
+        		final Location targetLocation = targetBlock.getLocation();
+        		final BiomeBrushSettings bbs = plugin.currentBrushers.get(player);
         		
         		if (bbs.getMode().equals(BiomeMode.ROUND)) {
-        			BiomeEditor.makeAndMarkCylinderBiome(player, targetLocation, bbs.getBiome(), bbs.getSize(), targetLocation.getBlockY());
+    				if (CNBiomeEdit.plugin.threaded) {
+        				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
+        					public void run() {
+        	        			BiomeEditor.makeAndMarkCylinderBiome(player, targetLocation, bbs.getBiome(), bbs.getSize(), targetLocation.getBlockY());
+        					}});
+    				} else {
+            			BiomeEditor.makeAndMarkCylinderBiome(player, targetLocation, bbs.getBiome(), bbs.getSize(), targetLocation.getBlockY());
+    				}
         			
         		} else if (bbs.getMode().equals(BiomeMode.SQUARE)) {
-        			BiomeEditor.makeAndMarkSquareBiome(player, targetLocation, bbs.getBiome(), bbs.getSize(), targetLocation.getBlockY());
+    				if (CNBiomeEdit.plugin.threaded) {
+        				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
+        					public void run() {
+        	        			BiomeEditor.makeAndMarkSquareBiome(player, targetLocation, bbs.getBiome(), bbs.getSize(), targetLocation.getBlockY());
+        					}});
+    				} else {
+            			BiomeEditor.makeAndMarkSquareBiome(player, targetLocation, bbs.getBiome(), bbs.getSize(), targetLocation.getBlockY());
+    				}
         			
         		} else if (bbs.getMode().equals(BiomeMode.REPLACE)) {
-        			BiomeEditor.replaceAndMarkBiome(player, targetLocation, bbs.getBiome(), targetLocation.getBlockY());
+    				if (CNBiomeEdit.plugin.threaded) {
+        				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
+        					public void run() {
+        	        			BiomeEditor.replaceAndMarkCompleteBiome(player, targetLocation, bbs.getBiome(), targetLocation.getBlockY());
+        					}});
+    				} else {
+            			BiomeEditor.replaceAndMarkCompleteBiome(player, targetLocation, bbs.getBiome(), targetLocation.getBlockY());
+    				}
 
         		}    			
     		}

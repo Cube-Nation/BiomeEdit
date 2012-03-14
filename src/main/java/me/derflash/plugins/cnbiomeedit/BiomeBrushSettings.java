@@ -83,7 +83,7 @@ public class BiomeBrushSettings {
 	}
 	
 	public static boolean isValidBiomeSize(int size) {
-		if (size < 0 || size > CNBiomeEdit.plugin.settings.getInt("maxRadius", 200)) return false;
+		if (size < 0 || size > CNBiomeEdit.plugin.settings.getInt("maxRadius", 500)) return false;
 		else return true;
 	}
 	public static BiomeMode getModeFromString(String string) {

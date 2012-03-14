@@ -42,7 +42,7 @@ public class WorldGuardFunctions {
 		Iterator<BlockVector> it = region.iterator();
 		while (it.hasNext()) {
 			BlockVector nextVector = it.next();
-			player.getWorld().setBiome(nextVector.getBlockX(), nextVector.getBlockZ(), biome);
+			Functions.setBiomeAt(player.getWorld(), nextVector.getBlockX(), nextVector.getBlockZ(), biome);
 		}
 		
 		return true;

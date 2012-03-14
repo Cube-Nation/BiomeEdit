@@ -1,13 +1,10 @@
 package me.derflash.plugins.cnbiomeedit;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Stack;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
-import org.bukkit.Bukkit;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -22,7 +19,7 @@ public class BiomeEditor {
         HashSet<int[]> foundPoints = new HashSet<int[]>();
         HashSet<int[]> outerPoints = new HashSet<int[]>();
         HashSet<String> checkedPoints = new HashSet<String>();
-        
+
 		String checkString;
 		
         World world = fromPos.getWorld();
@@ -40,6 +37,7 @@ public class BiomeEditor {
 				int[] locToCheck = locsAroundMe[i];
 				checkString = locToCheck[0] + "|" + locToCheck[1];
 				if (!checkedPoints.contains(checkString)) {
+										
 					if (world.getBiome(locToCheck[0], locToCheck[1]).equals(biome)) {
 						foundPoints.add(locToCheck);
 						checkPoints.push(locToCheck);
@@ -59,10 +57,11 @@ public class BiomeEditor {
 	// ########################################
     
     
-    public static ArrayList<int[]> makeSquareBiome(Location location, Biome _biome, int _biomeSize) {
-    	World world = location.getWorld();
+    public static BiomeArea makeSquareArea(Location location, Biome _biome, int _biomeSize) {
     	Vector pos1 = new Vector(location.getBlockX() - _biomeSize, location.getBlockY(), location.getBlockZ() - _biomeSize);
-        ArrayList<int []> weCUIMessages = new ArrayList<int []>();
+    	
+    	HashSet<int[]> weCUIMessages = new HashSet<int []>();
+        HashSet<int[]> foundPoints = new HashSet<int[]>();
 
         int xMax = _biomeSize * 2;
         int zMax = _biomeSize * 2;
@@ -72,18 +71,20 @@ public class BiomeEditor {
         		int _x = pos1.getBlockX()+x;
         		int _z = pos1.getBlockZ()+z;
         		
-                Functions.setBiomeAt(world, _x, _z, _biome);
+        		int[] p = new int[] {_x,_z};
+        		        		
+        		foundPoints.add(p);
+        		
         		if ( (x == 0 || x == xMax - 1) || (z == 0 || z == zMax - 1) ) {
         			weCUIMessages.add(new int [] {_x,_z});
         		}
         	}
     	}
     	
-		return weCUIMessages;
+		return new BiomeArea(foundPoints, weCUIMessages);
 	}
     
-    public static ArrayList<int[]> makeCylinderBiome(Location fromPos, Biome biome, double radius) {
-    	World world = fromPos.getWorld();
+    public static BiomeArea makeCylinderArea(Location fromPos, Biome biome, double radius) {
     	Vector pos = fromPos.toVector();
     	
     	double radiusX = radius;
@@ -102,8 +103,9 @@ public class BiomeEditor {
         final int ceilRadiusX = (int) Math.ceil(radiusX);
         final int ceilRadiusZ = (int) Math.ceil(radiusZ);
         
-        ArrayList<int []> weCUIMessages = new ArrayList<int []>();
-        
+        HashSet<int[]> weCUIMessages = new HashSet<int []>();
+        HashSet<int[]> foundPoints = new HashSet<int[]>();
+
         double nextXn = 0;
         forX: for (int x = 0; x <= ceilRadiusX; ++x) {
             final double xn = nextXn;
@@ -126,65 +128,46 @@ public class BiomeEditor {
                 int z1 = pos.getBlockZ() + z;
                 int z2 = pos.getBlockZ() - z;
                 
-                Functions.setBiomeAt(world, x1, z1, biome);
-                Functions.setBiomeAt(world, x2, z1, biome);
-                Functions.setBiomeAt(world, x1, z2, biome);
-                Functions.setBiomeAt(world, x2, z2, biome);
+                int[] p1 = new int[] {x1,z1};
+                int[] p2 = new int[] {x2,z1};
+                int[] p3 = new int[] {x1,z2};
+                int[] p4 = new int[] {x2,z2};
+               
+        		foundPoints.add(p1);
+        		foundPoints.add(p2);
+        		foundPoints.add(p3);
+        		foundPoints.add(p4);
 
-                // TODO
-                /*
-                if (regen) { 
-                	smartRegenChunkAt(x1, z1, world, reggedChunks);
-                	smartRegenChunkAt(x2, z1, world, reggedChunks);
-                	smartRegenChunkAt(x1, z2, world, reggedChunks);
-                	smartRegenChunkAt(x2, z2, world, reggedChunks);
-                }
-                */
-
-                if (! (Functions.lengthSq(nextXn, zn) <= 1 && Functions.lengthSq(xn, nextZn) <= 1)) {
-                	// we got an outter point => weGUI update
-                	
-                	weCUIMessages.add(new int[] {x1,z1});
-                	weCUIMessages.add(new int[] {x2,z2});
-                	weCUIMessages.add(new int[] {x2,z1});
-                	weCUIMessages.add(new int[] {x1,z2});
+                if (! (Functions.lengthSq(nextXn, zn) <= 1 && Functions.lengthSq(xn, nextZn) <= 1)) {                	
+                	weCUIMessages.add(p1);
+                	weCUIMessages.add(p2);
+                	weCUIMessages.add(p3);
+                	weCUIMessages.add(p4);
                 }
             }
         }
         
-        return weCUIMessages;
+		return new BiomeArea(foundPoints, weCUIMessages);
         
     }
     
-	public static Collection<int[]> replaceBiome(Location location, final Biome biome, Player player) {
-		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome boundaries...");
-		BiomeArea bArea = BiomeEditor.findBiomeArea(location);
-		
+    
+	public static void replaceBiomePoints(HashSet<int[]> points, World world, Biome biome, Player player) {
 		int counter = 0;
-		int maxCount = bArea.getPoints().size();
-		
-		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + maxCount + ChatColor.WHITE + " blocks to new biome now ...");
-		final World world = location.getWorld();
-		
 		int jump = 0;
-		int jumpAt = 10;
-		if (maxCount > 10000) jumpAt = 1;
-		else if (maxCount > 6000) jumpAt = 2;
-		else if (maxCount > 2000) jumpAt = 5;
 		
-		for (final int[] point : bArea.getPoints()) {
-			
-			if (!CNBiomeEdit.plugin.settings.getBoolean("threaded")) {
-				Functions.setBiomeAt(world, point[0], point[1], biome);
+		int maxCount = points.size();
+		
+		int jumpAt = 10;
+		int sweep = CNBiomeEdit.plugin.perSweep;
+		if (maxCount > 1000 * sweep) jumpAt = 1;
+		else if (maxCount > 350 * sweep) jumpAt = 2;
+		else if (maxCount > 100 * sweep) jumpAt = 5;
+		
+		for (int[] point : points) {
+			Functions.setBiomeAt(world, point[0], point[1], biome);
 				
-			} else {
-				Future<Object> go = Bukkit.getScheduler().callSyncMethod(CNBiomeEdit.plugin, new Callable<Object>() {
-					public Object call() throws Exception {
-						Functions.setBiomeAt(world, point[0], point[1], biome);
-						return null;
-					}});
-				while (!go.isDone()) {}
-				
+			if (CNBiomeEdit.plugin.threaded) {
 				if (((counter * 100 / maxCount)  % jumpAt) == 0) {
 					int percent = counter * 100 / maxCount;
 					if (jump != percent) {
@@ -193,13 +176,10 @@ public class BiomeEditor {
 					}
 				}
 				counter++;
-
 			}
-			
 		}
-
-		return bArea.getOuterPoints();
 	}
+    
 
 	public static void makeWGBiome(Player player, String regionID, Biome biome) {
     	try{
@@ -235,27 +215,25 @@ public class BiomeEditor {
 		makeAndMarkSquareBiome(player, player.getLocation(), biome, size, yLoc);
 	}
 	public static void makeAndMarkSquareBiome(Player player, Location location, Biome biome, int size, int yLoc) {
-   		ArrayList<int[]> borderPoints = BiomeEditor.makeSquareBiome(location, biome, size);
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome area...");
+		BiomeArea bArea = BiomeEditor.makeSquareArea(location, biome, size);
    		
-   		if (UIStuff.hasCUISupport(player)) {
-   			ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
-   			UIStuff.markAreaWithPoints(sorted, player, yLoc);
-   		}
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + bArea.getPoints().size() + ChatColor.WHITE + " blocks to new biome now ...");
+		changeAndMarkBiome(bArea, biome, location, player, yLoc);
 
 		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Square biome with radius "+ size +" created: " + biome.toString());
 }
 
 
-	public static void replaceAndMarkBiome(Player player, Biome biome, int yLoc) {
-		replaceAndMarkBiome(player, player.getLocation(), biome, yLoc);
+	public static void replaceAndMarkCompleteBiome(Player player, Biome biome, int yLoc) {
+		replaceAndMarkCompleteBiome(player, player.getLocation(), biome, yLoc);
 	}
-	public static void replaceAndMarkBiome(Player player, Location location, Biome biome, int yLoc) {
-		Collection<int[]> borderPoints = BiomeEditor.replaceBiome(location, biome, player);
+	public static void replaceAndMarkCompleteBiome(Player player, Location location, Biome biome, int yLoc) {
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome boundaries...");
+		BiomeArea bArea = BiomeEditor.findBiomeArea(location);
 		
-   		if (UIStuff.hasCUISupport(player)) {
-   			ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
-   			UIStuff.markAreaWithPoints(sorted, player, yLoc);		
-   		}
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + bArea.getPoints().size() + ChatColor.WHITE + " blocks to new biome now ...");
+		changeAndMarkBiome(bArea, biome, location, player, yLoc);
 
 		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome was replaced to: " + biome.toString());
 	}
@@ -264,16 +242,25 @@ public class BiomeEditor {
 	public static void makeAndMarkCylinderBiome(Player player, Biome biome, int size, int yLoc) {
 		makeAndMarkCylinderBiome(player, player.getLocation(), biome, size, yLoc);
 	}
-	public static void makeAndMarkCylinderBiome(Player player, Location targetLocation, Biome biome, int size, int yLoc) {
-		ArrayList<int[]> borderPoints = BiomeEditor.makeCylinderBiome(targetLocation, biome, size);
+	public static void makeAndMarkCylinderBiome(Player player, Location location, Biome biome, int size, int yLoc) {
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome area...");
+		BiomeArea bArea = BiomeEditor.makeCylinderArea(location, biome, size);
 
-   		if (UIStuff.hasCUISupport(player)) {
-   			ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
-   			UIStuff.markAreaWithPoints(sorted, player, yLoc);
-   		}
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + bArea.getPoints().size() + ChatColor.WHITE + " blocks to new biome now ...");
+		changeAndMarkBiome(bArea, biome, location, player, yLoc);
    		
 		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Round biome with radius "+ size +" created: " + biome.toString());
 
+	}
+	
+	
+	private static void changeAndMarkBiome(BiomeArea bArea, Biome biome, Location location, Player player, int yLoc) {
+		replaceBiomePoints(bArea.getPoints(), location.getWorld(), biome, player);
+		
+   		if (UIStuff.hasCUISupport(player)) {
+   			ArrayList<int[]> sorted = Functions.sortAreaPoints(bArea.getOuterPoints());
+   			UIStuff.markAreaWithPoints(sorted, player, yLoc);
+   		}
 	}
 
 }
