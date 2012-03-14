@@ -45,7 +45,7 @@ public class Functions {
         return (x * x) + (z * z);
     }
 
-	public static void setBiomeAt(World world, int x,int z, Biome biome) {
+	public static void setBiomeAt(final World world, final int x,final int z, final Biome biome) {
     	world.setBiome(x, z, biome);
     }		
 	

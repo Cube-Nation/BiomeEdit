@@ -15,8 +15,8 @@ import com.sk89q.worldedit.regions.RegionOperationException;
 public class WorldEditFunctions {
 
 	
-	public static boolean makeWEBiome(Player player, Biome biome, CNBiomeEdit plugin) {
-		LocalSession lSession = plugin.wePlugin().getSession(player);
+	public static boolean makeWEBiome(Player player, Biome biome) {
+		LocalSession lSession = CNBiomeEdit.plugin.wePlugin().getSession(player);
 		try {
 			Region region = lSession.getSelection(new BukkitWorld(player.getWorld()));
 			if (region == null) return false;

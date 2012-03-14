@@ -17,8 +17,8 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public class WorldGuardFunctions {
 
-	public static boolean makeWGBiome(Player player, String regionID, Biome biome, CNBiomeEdit plugin) {
-		RegionManager rm = plugin.wgPlugin().getGlobalRegionManager().get(player.getWorld());
+	public static boolean makeWGBiome(Player player, String regionID, Biome biome) {
+		RegionManager rm = CNBiomeEdit.plugin.wgPlugin().getGlobalRegionManager().get(player.getWorld());
 		ProtectedRegion pRegion = rm.getRegion(regionID);
 		if (pRegion == null) return false;
 		

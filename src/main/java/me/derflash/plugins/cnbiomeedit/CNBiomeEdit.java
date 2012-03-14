@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import me.derflash.plugins.cnbiomeedit.BiomeBrushSettings.BiomeMode;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -20,12 +21,19 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
 
 public class CNBiomeEdit extends JavaPlugin implements Listener {
-	HashSet<Byte> transparentBlocks = null;
 	public HashMap<Player, BiomeBrushSettings> currentBrushers = new HashMap<Player, BiomeBrushSettings>();
+
 	private WorldEditPlugin _wePlugin;
 	private WorldGuardPlugin _wgPlugin;
+	
+	public static CNBiomeEdit plugin;
 
+	HashSet<Byte> transparentBlocks = null;
+	HashSet<Player> cuiSupported = new HashSet<Player>();
+	
 	public void onEnable() {
+		CNBiomeEdit.plugin = this; // static access
+		
         getServer().getPluginManager().registerEvents(this, this);
 
 		transparentBlocks = new HashSet<Byte>();
@@ -42,14 +50,14 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     	// player is the warned player; player1 is the sender
     	// permissions cubewarn.staff & cubewarn.admin
-    	Player player = (Player) sender;
+    	final Player player = (Player) sender;
     	
 		if (!player.hasPermission("cnbiome.admin")) return true;
     	
     	if (true /* label.equalsIgnoreCase("biome")*/) {
     		
         		if(args.length > 2 && args[0].equalsIgnoreCase("set")) {
-        			Biome _biome = BiomeBrushSettings.getBiomeFromString(args[1]);
+        			final Biome _biome = BiomeBrushSettings.getBiomeFromString(args[1]);
         			if (_biome == null) {
             			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such biome. See " + ChatColor.AQUA + "/" + label + " list");
         				return true;
@@ -74,8 +82,6 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         				}
         				
         				BiomeEditor.makeAndMarkCylinderBiome(player, _biome, _biomeSize, -1);
-            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Round biome with radius "+ _biomeSize +" created: " + _biome.toString());
-
             			
         			} else if (_mode.equals(BiomeMode.SQUARE)) {
         				if (args.length < 4) {
@@ -90,8 +96,6 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         				}
         				
         				BiomeEditor.makeAndMarkSquareBiome(player, _biome, _biomeSize, -1);
-            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Square biome with radius "+ _biomeSize +" created: " + _biome.toString());
-            			
             			
         			} else if (_mode.equals(BiomeMode.REPLACE)) {
         				if (args.length > 3) {
@@ -99,8 +103,10 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
             				return true;
         				}
 
-        				BiomeEditor.replaceAndMarkBiome(player, _biome, -1);
-            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome was replaced to: " + _biome.toString());
+        				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
+        					public void run() {
+                				BiomeEditor.replaceAndMarkBiome(player, _biome, -1);
+        					}});
 
         			} else if (_mode.equals(BiomeMode.WE)) {
         				if (wePlugin() == null) {
@@ -113,13 +119,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
             				return true;
         				}
 
-        				if (BiomeEditor.makeWEBiome(player, _biome, this)) {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "WorldEdit selection was replaced to: " + _biome.toString());
-        					
-        				} else {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Could not find any WorldEdit selection. Please use your wand to define one first.");
-
-        				}
+        				BiomeEditor.makeWEBiome(player, _biome);
         				
         			} else if (_mode.equals(BiomeMode.WG)) {
         				if (wgPlugin() == null) {
@@ -137,13 +137,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         				}
         				String regionID = args[3];
         				
-        				if (BiomeEditor.makeWGBiome(player, regionID, _biome, this)) {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "WorldGuard region was replaced to: " + _biome.toString());
-        					
-        				} else {
-                			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Could not find any WorldGuard region with that ID.");
-
-        				}
+        				BiomeEditor.makeWGBiome(player, regionID, _biome);
         			}
         			
         			
@@ -186,11 +180,19 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 
         			
         		} else if(args.length > 0 && args[0].equalsIgnoreCase("info") ) {
-        			UIStuff.markBiome(player.getLocation(), player, -1);
-        			
         			Biome biome = player.getWorld().getBiome(player.getLocation().getBlockX(), player.getLocation().getBlockZ());
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "You are currently standing in: " + ChatColor.AQUA + biome.toString());
-
+        			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome boundaries...");
+        			
+        			BiomeArea bArea = null;
+        			if (UIStuff.hasCUISupport(player)) {
+        				bArea = UIStuff.markBiome(player.getLocation(), player, -1);
+        			} else {
+        				bArea = BiomeEditor.findBiomeArea(player.getLocation());
+        			}
+        			if (bArea != null) {
+            			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. The current biome has " + bArea.getPoints().size() + " blocks.");
+        			}
         			
         		} else if(args.length > 0 && args[0].equalsIgnoreCase("list") ) {
         			String biomes = null;

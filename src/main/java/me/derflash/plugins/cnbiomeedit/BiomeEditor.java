@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Stack;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-
 public class BiomeEditor {
 	
-    public static HashSet<int[]> findBiomeArea(Location fromPos, boolean filled) {
+    public static BiomeArea findBiomeArea(Location fromPos) {
     	Stack<int[]> checkPoints = new Stack<int[]>();
         HashSet<int[]> foundPoints = new HashSet<int[]>();
         HashSet<int[]> outerPoints = new HashSet<int[]>();
@@ -41,14 +44,14 @@ public class BiomeEditor {
 						foundPoints.add(locToCheck);
 						checkPoints.push(locToCheck);
 					} else {
-						if (!filled && !outerPoints.contains(currentCheck)) outerPoints.add(currentCheck);
+						if (!outerPoints.contains(currentCheck)) outerPoints.add(currentCheck);
 					}
 				}
 				checkedPoints.add(checkString);
 			}
 		}
 		
-		return filled ? foundPoints : outerPoints;
+		return new BiomeArea(foundPoints, outerPoints);
 		
     }
     
@@ -153,31 +156,69 @@ public class BiomeEditor {
         
     }
     
-	public static Collection<int[]> replaceBiome(Location location, Biome biome) {
-		HashSet<int[]> points = BiomeEditor.findBiomeArea(location, true);
+	public static Collection<int[]> replaceBiome(Location location, final Biome biome, Player player) {
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome boundaries...");
+		BiomeArea bArea = BiomeEditor.findBiomeArea(location);
 		
-		World world = location.getWorld();
-		for (int[] point : points) {
-			Functions.setBiomeAt(world, point[0], point[1], biome);
+		int counter = 0;
+		int maxCount = bArea.getPoints().size();
+		
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Done. Changing " + ChatColor.AQUA + maxCount + ChatColor.WHITE + " blocks to new biome now ...");
+		final World world = location.getWorld();
+		
+		int jump = 0;
+		int jumpAt = 10;
+		if (maxCount > 10000) jumpAt = 1;
+		else if (maxCount > 6000) jumpAt = 2;
+		else if (maxCount > 2000) jumpAt = 5;
+		
+		for (final int[] point : bArea.getPoints()) {
+			Future<Object> go = Bukkit.getScheduler().callSyncMethod(CNBiomeEdit.plugin, new Callable<Object>() {
+				public Object call() throws Exception {
+					Functions.setBiomeAt(world, point[0], point[1], biome);
+					return null;
+				}});
+			while (!go.isDone()) {}
+			
+			if (((counter * 100 / maxCount)  % jumpAt) == 0) {
+				int percent = counter * 100 / maxCount;
+				if (jump != percent) {
+					player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "... " + percent + "%");
+					jump = percent;
+				}
+			}
+			counter++;
 		}
 
-		return BiomeEditor.findBiomeArea(location, false);
+		return bArea.getOuterPoints();
 	}
 
-	public static boolean makeWGBiome(Player player, String regionID, Biome biome, CNBiomeEdit plugin) {
-    	try{ return WorldGuardFunctions.makeWGBiome(player, regionID, biome, plugin); }
+	public static void makeWGBiome(Player player, String regionID, Biome biome) {
+    	try{
+    		if (WorldGuardFunctions.makeWGBiome(player, regionID, biome)) {
+    			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "WorldGuard region was replaced to: " + biome.toString());
+    			return;
+    		}
+    	}
     	catch (Exception e) {}
     	catch (Error er) {}
-		return false;
+		
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Could not find any WorldGuard region with that ID.");
 	}
 
-
-	public static boolean makeWEBiome(Player player, Biome biome, CNBiomeEdit plugin) {
-    	try{ return WorldEditFunctions.makeWEBiome(player, biome, plugin); }
+	public static void makeWEBiome(Player player, Biome biome) {
+    	try{
+    		if (WorldEditFunctions.makeWEBiome(player, biome)) {
+    			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "WorldEdit selection was replaced to: " + biome.toString());
+    			return;
+    		}
+    	}
     	catch (Exception e) {}
     	catch (Error er) {}
-		return false;
+    	
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Could not find any WorldEdit selection. Please use your wand to define one first.");
 	}
+	
 	
 	// ########################################
 	
@@ -185,20 +226,30 @@ public class BiomeEditor {
 	public static void makeAndMarkSquareBiome(Player player, Biome biome, int size, int yLoc) {
 		makeAndMarkSquareBiome(player, player.getLocation(), biome, size, yLoc);
 	}
-	public static void makeAndMarkSquareBiome(Player player, Location location, Biome _biome, int _biomeSize, int yLoc) {
-   		ArrayList<int[]> borderPoints = BiomeEditor.makeSquareBiome(location, _biome, _biomeSize);
-		ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
-		UIStuff.markAreaWithPoints(sorted, player, yLoc);
-	}
+	public static void makeAndMarkSquareBiome(Player player, Location location, Biome biome, int size, int yLoc) {
+   		ArrayList<int[]> borderPoints = BiomeEditor.makeSquareBiome(location, biome, size);
+   		
+   		if (UIStuff.hasCUISupport(player)) {
+   			ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
+   			UIStuff.markAreaWithPoints(sorted, player, yLoc);
+   		}
+
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Square biome with radius "+ size +" created: " + biome.toString());
+}
 
 
-	public static void replaceAndMarkBiome(Player player, Biome _biome, int yLoc) {
-		replaceAndMarkBiome(player, player.getLocation(), _biome, yLoc);
+	public static void replaceAndMarkBiome(Player player, Biome biome, int yLoc) {
+		replaceAndMarkBiome(player, player.getLocation(), biome, yLoc);
 	}
-	public static void replaceAndMarkBiome(Player player, Location location, Biome _biome, int yLoc) {
-		Collection<int[]> borderPoints = BiomeEditor.replaceBiome(location, _biome);
-		ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
-		UIStuff.markAreaWithPoints(sorted, player, yLoc);		
+	public static void replaceAndMarkBiome(Player player, Location location, Biome biome, int yLoc) {
+		Collection<int[]> borderPoints = BiomeEditor.replaceBiome(location, biome, player);
+		
+   		if (UIStuff.hasCUISupport(player)) {
+   			ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
+   			UIStuff.markAreaWithPoints(sorted, player, yLoc);		
+   		}
+
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Biome was replaced to: " + biome.toString());
 	}
 
 
@@ -207,12 +258,14 @@ public class BiomeEditor {
 	}
 	public static void makeAndMarkCylinderBiome(Player player, Location targetLocation, Biome biome, int size, int yLoc) {
 		ArrayList<int[]> borderPoints = BiomeEditor.makeCylinderBiome(targetLocation, biome, size);
-		ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
-		UIStuff.markAreaWithPoints(sorted, player, yLoc);		
+
+   		if (UIStuff.hasCUISupport(player)) {
+   			ArrayList<int[]> sorted = Functions.sortAreaPoints(borderPoints);
+   			UIStuff.markAreaWithPoints(sorted, player, yLoc);
+   		}
+   		
+		player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Round biome with radius "+ size +" created: " + biome.toString());
+
 	}
-
-
-
-
 
 }
