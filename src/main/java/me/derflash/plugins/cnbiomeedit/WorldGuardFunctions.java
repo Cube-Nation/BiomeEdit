@@ -1,5 +1,6 @@
 package me.derflash.plugins.cnbiomeedit;
 
+import java.util.HashSet;
 import java.util.Iterator;
 
 import org.bukkit.block.Biome;
@@ -54,10 +55,13 @@ public class WorldGuardFunctions {
 		if (region == null) return false;
 
 		Iterator<BlockVector> it = region.iterator();
+		HashSet<int []> cache = new HashSet<int []>();
 		while (it.hasNext()) {
 			BlockVector nextVector = it.next();
-			Functions.setBiomeAt(player.getWorld(), nextVector.getBlockX(), nextVector.getBlockZ(), biome);
+			cache.add(new int[] {nextVector.getBlockX(), nextVector.getBlockZ()});
 		}
+		
+		BiomeEditor.replaceBiomePoints(cache, player.getWorld(), biome, player);
 		
 		return true;
 	}

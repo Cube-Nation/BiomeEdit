@@ -34,7 +34,7 @@
         <dependency>
         	<groupId>com.sk89q</groupId>
         	<artifactId>worldedit</artifactId>
-        	<version>5.3-SNAPSHOT</version>
+        	<version>5.4-SNAPSHOT</version>
         </dependency>
         <dependency>
         	<groupId>com.sk89q</groupId>
@@ -49,8 +49,8 @@
         <dependency>
         	<groupId>org.bukkit</groupId>
         	<artifactId>bukkit</artifactId>
-        	<version>1.2.3-R0.2-SNAPSHOT</version>
+        	<version>1.2.5-R4.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
-    <version>0.4</version>
+    <version>1.0</version>
 </project>

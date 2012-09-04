@@ -7,7 +7,6 @@ import java.util.HashSet;
 
 import me.derflash.plugins.cnbiomeedit.BiomeBrushSettings.BiomeMode;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -18,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+
 
 
 public class CNBiomeEdit extends JavaPlugin implements Listener {
@@ -31,8 +31,17 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 	private File settingsFile;
 	public YamlConfiguration settings;
 	int perSweep = 1000;
-	boolean threaded = true;
+	int debugEnabled = 0;
+	int cuiMaxPoints = 200;
 	
+	public enum Verbose {
+		ERROR(1),
+		ALL(2);
+		
+		private int value;
+		private Verbose(int value) {this.value = value;}
+		public int getValue() {return value;}
+	}
 	
 	public void onEnable() {
 		CNBiomeEdit.plugin = this; // static access
@@ -44,17 +53,19 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         if (settingsFile.exists()) {
         	settings = YamlConfiguration.loadConfiguration(settingsFile);
         	perSweep = settings.getInt("perSweep", 1000);
-        	threaded = settings.getBoolean("threaded", true);
+        	debugEnabled = settings.getInt("debug", 0);
+        	cuiMaxPoints = settings.getInt("cuiMaxPoints", 200);
 
         } else {
         	settings = new YamlConfiguration();
         	settings.set("maxRadius", 500);
-        	settings.set("threaded", true);
         	settings.set("perSweep", 1000);
-        	saveSettings();
+        	settings.set("cuiMaxPoints", 200);
+        	settings.set("debug", 0);
         	
         }
-		
+    	saveSettings();
+
         getServer().getPluginManager().registerEvents(this, this);
 
 		transparentBlocks = new HashSet<Byte>();
@@ -67,6 +78,12 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     public void onDisable() {
     }
     
+    
+    public static void logIt(String logEntry, Verbose verbose) {
+    	if (CNBiomeEdit.plugin.debugEnabled >= verbose.getValue()) {
+    		CNBiomeEdit.plugin.getLogger().info(logEntry);
+    	}
+    }
     
 	public boolean saveSettings() {
 		if (!settingsFile.exists()) {
@@ -86,14 +103,14 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     	// player is the warned player; player1 is the sender
     	// permissions cubewarn.staff & cubewarn.admin
-    	final Player player = (Player) sender;
+    	Player player = (Player) sender;
     	
 		if (!player.hasPermission("cnbiome.admin")) return true;
     	
     	if (true /* label.equalsIgnoreCase("biome")*/) {
     		
         		if(args.length > 2 && args[0].equalsIgnoreCase("set")) {
-        			final Biome _biome = BiomeBrushSettings.getBiomeFromString(args[1]);
+        			Biome _biome = BiomeBrushSettings.getBiomeFromString(args[1]);
         			if (_biome == null) {
             			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "There's no such biome. See " + ChatColor.AQUA + "/" + label + " list");
         				return true;
@@ -111,20 +128,13 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
             				return true;
         				}
         				
-            			final int _biomeSize = Integer.parseInt(args[3]);
+            			int _biomeSize = Integer.parseInt(args[3]);
         				if (!BiomeBrushSettings.isValidBiomeSize(_biomeSize)) {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "This is no valid size. See " + ChatColor.AQUA + "/" + label + " help");
             				return true;
         				}
         				
-        				if (threaded) {
-            				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
-            					public void run() {
-                    				BiomeEditor.makeAndMarkCylinderBiome(player, _biome, _biomeSize, -1);
-            					}});
-        				} else {
-            				BiomeEditor.makeAndMarkCylinderBiome(player, _biome, _biomeSize, -1);
-        				}
+               			BiomeEditor.makeAndMarkCylinderBiome(player, _biome, _biomeSize, -1);
             			
         			} else if (_mode.equals(BiomeMode.SQUARE)) {
         				if (args.length < 4) {
@@ -132,36 +142,22 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
             				return true;
         				}
 
-            			final int _biomeSize = Integer.parseInt(args[3]);
+            			int _biomeSize = Integer.parseInt(args[3]);
         				if (!BiomeBrushSettings.isValidBiomeSize(_biomeSize)) {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "This is no valid size. See " + ChatColor.AQUA + "/" + label + " help");
             				return true;
         				}
         				
-        				if (threaded) {
-            				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
-            					public void run() {
-                    				BiomeEditor.makeAndMarkSquareBiome(player, _biome, _biomeSize, -1);
-            					}});
-        				} else {
-            				BiomeEditor.makeAndMarkSquareBiome(player, _biome, _biomeSize, -1);
-        				}
-            			
+               			BiomeEditor.makeAndMarkSquareBiome(player, _biome, _biomeSize, -1);
+        				
         			} else if (_mode.equals(BiomeMode.REPLACE)) {
         				if (args.length > 3) {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Replace only needs the biome parameter. See " + ChatColor.AQUA + "/" + label + " help");
             				return true;
         				}
 
-        				if (threaded) {
-            				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
-            					public void run() {
-                    				BiomeEditor.replaceAndMarkCompleteBiome(player, _biome, -1);
-            					}});
-        				} else {
-            				BiomeEditor.replaceAndMarkCompleteBiome(player, _biome, -1);
-        				}
-
+           				BiomeEditor.replaceAndMarkCompleteBiome(player, _biome, -1);
+        				
         			} else if (_mode.equals(BiomeMode.WE)) {
         				try {
             				if (WorldEditFunctions.wePlugin() == null) {
@@ -184,14 +180,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
             				return true;
         				}
 
-        				if (threaded) {
-            				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
-            					public void run() {
-                    				BiomeEditor.makeWEBiome(player, _biome);
-            					}});
-        				} else {
-            				BiomeEditor.makeWEBiome(player, _biome);
-        				}
+               			BiomeEditor.makeWEBiome(player, _biome);
         				
         			} else if (_mode.equals(BiomeMode.WG)) {
         				try {
@@ -217,16 +206,10 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
                 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "WG only needs the biome and WorldGuard regionID parameter. See " + ChatColor.AQUA + "/" + label + " help");
             				return true;
         				}
-        				final String regionID = args[3];
+        				String regionID = args[3];
         				
-        				if (threaded) {
-            				Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() {
-            					public void run() {
-                    				BiomeEditor.makeWGBiome(player, regionID, _biome);
-            					}});
-        				} else {
-            				BiomeEditor.makeWGBiome(player, regionID, _biome);
-        				}
+               			BiomeEditor.makeWGBiome(player, regionID, _biome);
+        				
         			}
         			
         			
@@ -299,6 +282,9 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         				else biomes += ", " + biome.toString();
         			}
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Available biomes: " + ChatColor.AQUA + biomes);
+
+        		} else if(args.length > 0 && args[0].equalsIgnoreCase("cancel") ) {
+        			BiomeEditor.cancel(player);
         			
         		} else if(args.length > 0 && args[0].equalsIgnoreCase("modes") ) {
         			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "- Mode overview -");
@@ -318,6 +304,7 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
         			player.sendMessage(ChatColor.AQUA + "- " + ChatColor.WHITE + "/"+label+" info - Gives you informations about the biome you're currently standing in");
         			player.sendMessage(ChatColor.AQUA + "- " + ChatColor.WHITE + "/"+label+" list - Lists the servers' available biomes");
         			player.sendMessage(ChatColor.AQUA + "- " + ChatColor.WHITE + "/"+label+" modes - Lists the replacement modes");
+        			player.sendMessage(ChatColor.AQUA + "- " + ChatColor.WHITE + "/"+label+" cancel - Cancels any active BiomeEdit job");
 
         		}
         		

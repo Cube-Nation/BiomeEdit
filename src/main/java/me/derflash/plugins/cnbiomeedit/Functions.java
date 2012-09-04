@@ -3,21 +3,12 @@ package me.derflash.plugins.cnbiomeedit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.Packet50PreChunk;
-import net.minecraft.server.Packet51MapChunk;
+import me.derflash.plugins.cnbiomeedit.CNBiomeEdit.Verbose;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Biome;
-import org.bukkit.craftbukkit.CraftChunk;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.entity.Player;
 
 public class Functions {
 
@@ -31,7 +22,7 @@ public class Functions {
 		outerPoints.remove(first);
 
 		int maxCount = outerPoints.size();
-		for (int i = 0; i < maxCount; i++) {
+		for (int i = 0; i < maxCount; i++) {			
 			double d = -1;
 			int[] next = null;
 			for (int[] pointCheck : outerPoints) {
@@ -54,105 +45,50 @@ public class Functions {
 		return sorted;
 	}
 
-    public static final double lengthSq(double x, double z) {
+    public static double lengthSq(double x, double z) {
         return (x * x) + (z * z);
     }
-
     
-	public static void _setBiomeAt(final World world, int x, int z, Biome biome) {
-		Chunk chunk = world.getChunkAt(x >> 4, z >> 4);
-		if (!chunk.isLoaded()) chunk.load();
-        
-    	world.setBiome(x, z, biome);
-	}
-
-	public static void _setBiomeAt(final World world, HashSet<int []> blockHunk, Biome biome) {
-		for (int [] blockLoc : blockHunk) {
-	    	world.setBiome(blockLoc[0], blockLoc[1], biome);
-		}
-	}
-
-	private static HashSet<int []> blockHunk;
-	public static void setBiomeAt(final World world, final int x,final int z, final Biome biome) {
-		if (!CNBiomeEdit.plugin.threaded) {
-			Functions._setBiomeAt(world, x, z, biome);
-		} else {
-			if (blockHunk == null) blockHunk = new HashSet<int []>();
-
-			if (blockHunk.size() < CNBiomeEdit.plugin.perSweep) {
-				blockHunk.add(new int[] {x, z});
-				return;
-			}
-			blockHunk.add(new int[] {x,z});
-			
-			Future<Object> go = Bukkit.getScheduler().callSyncMethod(CNBiomeEdit.plugin, new Callable<Object>() {
-				public Object call() throws Exception {
-					Functions._setBiomeAt(world, blockHunk, biome);
-					return null;
-				}});
-			while (!go.isDone()) {}
-			
-			blockHunk.clear();
-		}
-    }		
-	
-
-	public static void smartReloadChunks(HashSet<int []> points, World world) {
+    
+	public static void smartReloadChunks(HashSet<int []> points, final World world) {
     	
 		// reload chunks
-        HashSet<Chunk> refreshedChunks = new HashSet<Chunk>();
-		for (int[] point : points) {
-			Chunk chunk = world.getChunkAt(point[0] >> 4, point[1] >> 4);
-			if (!refreshedChunks.contains(chunk)) {
-	            try {
-					System.out.println("Refreshing: " + chunk.toString());
-					
-			        // doesn't do anything at all
+        HashSet<String> refreshedChunks = new HashSet<String>();
+		for (final int[] point : points) {
+			
+			String checkString = (point[0] >> 4) + "|" +  (point[1] >> 4);
+
+			if (!refreshedChunks.contains(checkString)) {
+				CNBiomeEdit.logIt("Refreshing: " + checkString, Verbose.ALL);
+				
+				Bukkit.getScheduler().scheduleSyncDelayedTask(CNBiomeEdit.plugin, new Runnable() { public void run() {
+					Chunk chunk = world.getChunkAt(point[0] >> 4, point[1] >> 4);
 	            	world.refreshChunk(chunk.getX(), chunk.getZ());
-	            	
-	            } catch (Throwable t) {
-	                t.printStackTrace();
-	            }
-				refreshedChunks.add(chunk);
+				}});
+
+				refreshedChunks.add(checkString);
 			}
 		}
+
+	}
+
+	public static Collection<int[]> thinOut(Collection<int[]> sorted) {
+		if (sorted.size() <= CNBiomeEdit.plugin.cuiMaxPoints) return sorted;
 		
-		for (Player player : world.getPlayers()) {
-			Location loc = player.getLocation();
-			if (refreshedChunks.contains(world.getChunkAt(loc.getBlockX() >> 4, loc.getBlockZ() >> 4))) {
-
-				System.out.println("Resetting chunk cache for " + player.getName());
-
-				// player needs refresh
-				EntityPlayer entityplayer = ((CraftPlayer)player).getHandle();
-
-		        // boots me from the server with "moved too quickly, hacking?"
-//		        byte actualDimension = (byte) (world.getEnvironment().getId());
-//		        WorldServer worldserver = ((CraftWorld)world).getHandle();
-//		        entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0), (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.itemInWorldManager.getGameMode()));
-//		        entityplayer.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.itemInWorldManager.getGameMode()));
-		        
-				// resend him all changed chunks
-				for (Chunk chunk : refreshedChunks) {
-					if (chunk.isLoaded()) {
-
-						// doesn't do anything at all
-						entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(chunk.getX(), chunk.getZ(), false));
-
-						if (chunk.unload()) {
-							System.out.println("Resending: " + chunk.toString());
-							CraftChunk cChunk = (CraftChunk)chunk;
-							Packet51MapChunk mapChunk = new Packet51MapChunk(cChunk.getHandle(), false, 0);
-							
-					        // doesn't do anything at all
-							entityplayer.netServerHandler.sendPacket(mapChunk);
-							
-						} else {
-							System.out.println("Could not unload: " + chunk.toString());
-						}
-					}
+		// try to reduce the amount of CUI points
+		while (sorted.size() > CNBiomeEdit.plugin.cuiMaxPoints) {
+			CNBiomeEdit.logIt("Found more than " + sorted.size() + " (max: " + CNBiomeEdit.plugin.cuiMaxPoints + ") weCUI points, diving in half.", Verbose.ERROR);
+			
+			ArrayList<int[]> sortedNew = new ArrayList<int[]>();
+			boolean odd = true;
+			for (int[] pt : sorted) {
+				if (odd) {
+					sortedNew.add(pt);
 				}
+				odd = !odd;
 			}
+			sorted = sortedNew;
 		}
+		return sorted;
 	}
 }
