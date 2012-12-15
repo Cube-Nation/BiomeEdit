@@ -6,8 +6,8 @@
     <url>http://www.cube-nation.de/</url>
     <repositories>
         <repository>
-            <id>bukkit-repo</id>
-            <url>http://repo.bukkit.org/content/groups/public</url>
+            <id>cna-public-repos</id>
+            <url>http://cube-nation.de:8081/nexus/content/groups/public/</url>
         </repository>
     </repositories>
     <distributionManagement>
@@ -42,24 +42,19 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-        	<groupId>com.sk89q</groupId>
-        	<artifactId>worldedit</artifactId>
-        	<version>5.4.6-SNAPSHOT</version>
+            <groupId>com.sk89q</groupId>
+            <artifactId>worldedit</artifactId>
+            <version>5.4.6-TEMPFIX</version>
         </dependency>
         <dependency>
         	<groupId>com.sk89q</groupId>
         	<artifactId>worldguard</artifactId>
-        	<version>5.6.3-SNAPSHOT</version>
+        	<version>5.6.6</version>
         </dependency>
         <dependency>
         	<groupId>org.bukkit</groupId>
         	<artifactId>craftbukkit</artifactId>
-        	<version>1.2.3-R0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-        	<groupId>org.bukkit</groupId>
-        	<artifactId>bukkit</artifactId>
-        	<version>1.2.5-R4.1-SNAPSHOT</version>
+            <version>1.4.5-R0.3</version>
         </dependency>
     </dependencies>
     <version>1.1-SNAPSHOT</version>
