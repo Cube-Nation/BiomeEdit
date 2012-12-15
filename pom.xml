@@ -10,6 +10,16 @@
             <url>http://repo.bukkit.org/content/groups/public</url>
         </repository>
     </repositories>
+    <distributionManagement>
+        <repository>
+            <id>cna-releases</id>
+            <url>http://cube-nation.de:8081/nexus/content/repositories/releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>cna-snapshots</id>
+            <url>http://cube-nation.de:8081/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
     <build>
         <plugins>
             <plugin>
@@ -52,5 +62,5 @@
         	<version>1.2.5-R4.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
 </project>
