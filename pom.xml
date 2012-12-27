@@ -7,17 +7,17 @@
     <repositories>
         <repository>
             <id>cna-public-repos</id>
-            <url>http://cube-nation.de:8081/nexus/content/groups/public/</url>
+            <url>http://nexus.cube-nation.de/content/groups/public/</url>
         </repository>
     </repositories>
     <distributionManagement>
         <repository>
             <id>cna-releases</id>
-            <url>http://cube-nation.de:8081/nexus/content/repositories/releases</url>
+            <url>http://nexus.cube-nation.de/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>cna-snapshots</id>
-            <url>http://cube-nation.de:8081/nexus/content/repositories/snapshots</url>
+            <url>http://nexus.cube-nation.de/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
     <build>
