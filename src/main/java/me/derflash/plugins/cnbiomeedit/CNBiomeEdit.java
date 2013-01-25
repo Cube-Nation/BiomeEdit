@@ -45,6 +45,13 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 	}
 	
 	public void onEnable() {
+		try {
+		    Metrics metrics = new Metrics(this);
+		    metrics.start();
+		} catch (IOException e) {
+		    // Failed to submit the stats :-(
+		}
+		
 		CNBiomeEdit.plugin = this; // static access
 		
 		File dFolder = getDataFolder();
@@ -74,14 +81,6 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 		transparentBlocks.add((byte) 20);
 		
 		new PlayerListener(this);
-		
-		try {
-		    Metrics metrics = new Metrics(this);
-		    metrics.start();
-		} catch (IOException e) {
-		    // Failed to submit the stats :-(
-		}
-
     }
     
     public void onDisable() {
