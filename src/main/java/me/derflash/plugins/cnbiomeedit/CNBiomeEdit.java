@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.mcstats.Metrics;
 
 
 
@@ -73,6 +74,14 @@ public class CNBiomeEdit extends JavaPlugin implements Listener {
 		transparentBlocks.add((byte) 20);
 		
 		new PlayerListener(this);
+		
+		try {
+		    Metrics metrics = new Metrics(this);
+		    metrics.start();
+		} catch (IOException e) {
+		    // Failed to submit the stats :-(
+		}
+
     }
     
     public void onDisable() {
