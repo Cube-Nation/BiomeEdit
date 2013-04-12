@@ -130,7 +130,7 @@ public class BiomeEditor {
 		return new BiomeArea(foundPoints, weCUIMessages);
 	}
     
-    public static BiomeArea makeCylinderArea(Location fromPos, Biome biome, double radius) {
+    public static BiomeArea makeCylinderArea(Location fromPos, double radius) {
     	Vector pos = fromPos.toVector();
     	
     	double radiusX = radius;
@@ -285,7 +285,7 @@ public class BiomeEditor {
 	public static void makeAndMarkCylinderBiome(final Player player, final Location location, final Biome biome, final int size, final int yLoc) {
 		Bukkit.getScheduler().scheduleAsyncDelayedTask(CNBiomeEdit.plugin, new Runnable() { public void run() {
 			player.sendMessage(ChatColor.AQUA + "[BiomeEdit] " + ChatColor.WHITE + "Calculating biome area. This may take a while...");
-			BiomeArea bArea = BiomeEditor.makeCylinderArea(location, biome, size);
+			BiomeArea bArea = BiomeEditor.makeCylinderArea(location, size);
 
 			if (Thread.interrupted()) {return;}
 
